@@ -1,0 +1,44 @@
+type Mutation {
+  sendMessage(message: MessageInput!): Message
+  newChannel(channel: ChannelInput!): Channel
+}
+
+type Query {
+  channels: [Channel]
+  channel(id: ID!): Channel
+}
+
+type Subscription {
+  messageSent: Message
+}
+
+input MessageInput {
+  channelId: ID!
+  text: String!
+}
+
+input ChannelInput {
+  name: String!
+  participants: [ID!]!
+}
+
+type Message {
+  id: ID!
+  text: String!
+  createdAt: String!
+}
+
+type Channel {
+  id: ID!
+  name: String!
+  participants: [User!]!
+  messages: [Message!]!
+}
+
+type User {
+  id: ID!
+  lastActive: String!
+  name: String!
+  email: String
+  channels: [Channel!]!
+}
