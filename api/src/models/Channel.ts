@@ -32,9 +32,9 @@ export class Channel extends BaseEntity {
   @Field({ nullable: true })
   updatedAt: Date;
 
-  @ManyToMany(() => User)
+  @ManyToMany(() => User, (user) => user.channels)
   @Field((type) => [User])
-  users: User[];
+  members: User[];
 
   @OneToMany(() => Message, (message) => message.channel)
   @Field((type) => [Message])

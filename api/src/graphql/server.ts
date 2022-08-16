@@ -10,6 +10,8 @@ import Redis from "ioredis";
 import session from "express-session";
 import ConnectRedis from "connect-redis";
 import { isProduction } from "../util/isProduction";
+import { authChecker } from "./authorization";
+import { ChannelResolver } from "../resolvers/ChannelResolver";
 
 const PORT = process.env.PORT || 4000;
 
@@ -19,7 +21,8 @@ export async function startApolloServer({
   redis: Redis;
 }) {
   const schema = await buildSchema({
-    resolvers: [UserResolver],
+    resolvers: [UserResolver, ChannelResolver],
+    authChecker: authChecker
   });
   const app = express();
   const httpServer = http.createServer(app);

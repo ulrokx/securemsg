@@ -28,7 +28,7 @@ export class User extends BaseEntity {
   password: string;
 
   @Column("int", { nullable: true })
-  code: number;
+  code: number | null;
 
   @Column("boolean", { default: false })
   @Field()
@@ -46,7 +46,7 @@ export class User extends BaseEntity {
   @Field({ nullable: true })
   updatedAt: Date;
 
-  @ManyToMany(() => Channel)
+  @ManyToMany(() => Channel, (channel) => channel.members)
   @JoinTable()
   @Field((type) => [Channel])
   channels: Channel[];

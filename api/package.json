@@ -35,6 +35,7 @@
     "ioredis": "^5.2.2",
     "nodemailer": "^6.7.8",
     "pg": "^8.7.3",
+    "pg-protocol": "^1.5.0",
     "reflect-metadata": "^0.1.13",
     "type-graphql": "^1.1.1",
     "typeorm": "^0.3.7",

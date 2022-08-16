@@ -25,10 +25,11 @@ export const validateRegistration = async (
       "INVALID_USERNAME"
     );
   }
-  const existingUser = await User.findOne({
+  const existingUsername = await User.findOne({
     where: { username },
   });
-  if (existingUser) {
+  const existingEmail = await User.findOne({ where: { email } });
+  if (existingUsername) {
     throw new ApolloError(
       "Username already exists",
       "USERNAME_ALREADY_EXISTS"

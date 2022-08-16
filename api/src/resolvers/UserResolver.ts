@@ -2,6 +2,7 @@ import { ApolloError } from "apollo-server-core";
 import { Request } from "express";
 import {
   Arg,
+  Authorized,
   Ctx,
   Field,
   ID,
@@ -117,6 +118,31 @@ export class UserResolver {
     });
     return true;
   }
+
+  @Authorized("UNVERIFIEDUSER")
+  @Mutation(() => User, { nullable: true })
+  async verify(
+    @Arg("code", (type) => Int) code: number,
+    @Ctx() { req }: MyContext
+  ) {
+    const user = await User.findOne({
+      where: { id: req.session.userId },
+    });
+    if (!user) {
+      throw new ApolloError("User not found", "USER_NOT_FOUND");
+    }
+    if(user.verifiedEmail) {
+      throw new ApolloError("Email already verified", "EMAIL_ALREADY_VERIFIED");
+    }
+    if (user.code !== code) {
+      throw new ApolloError("Invalid code", "INVALID_CODE");
+    }
+    user.verifiedEmail = true;
+    user.code = null;
+    await user.save();
+    return user;
+  }
+
   @Query(() => User, { nullable: true })
   async me(@Ctx() { req }: MyContext) {
     if (!req.session?.userId) {
