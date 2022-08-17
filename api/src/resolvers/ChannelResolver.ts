@@ -2,14 +2,20 @@ import { ApolloError } from "apollo-server-core";
 import {
   Arg,
   Field,
+  FieldResolver,
   ID,
   InputType,
   Mutation,
+  Query,
   Resolver,
+  Root,
 } from "type-graphql";
 import { Channel } from "../models/Channel";
 import { dataSource } from "../orm/connect";
 import { DatabaseError } from "pg-protocol";
+import { User } from "../models/User";
+import { PaginationInput } from "./UserResolver";
+import { Message } from "../models/Message";
 
 @InputType()
 class CreateChannelInput {
@@ -22,15 +28,48 @@ class CreateChannelInput {
 
 @InputType()
 class AddToChannelInput {
-  @Field(type => ID)
+  @Field((type) => ID)
   userId: number;
 
-  @Field(type => ID)
+  @Field((type) => ID)
   channelId: number;
 }
 
-@Resolver()
+@Resolver((of) => Channel)
 export class ChannelResolver {
+  @FieldResolver()
+  async members(@Root() channel: Channel) {
+    return User.find({
+      where: {
+        channels: {
+          id: channel.id,
+        },
+      },
+    });
+  }
+
+  @FieldResolver()
+  async messages(
+    @Root() channel: Channel,
+    @Arg("pagination", { nullable: true })
+    pagination: PaginationInput
+  ) {
+    let limit;
+    let offset;
+    if (!pagination?.limit || !pagination?.offset) {
+      limit = 20;
+      offset = 0;
+    } else {
+      limit = pagination.limit;
+      offset = pagination.offset;
+    }
+    return Message.find({
+      where: { channel: { id: channel.id } },
+      take: limit,
+      skip: offset,
+      order: { createdAt: "DESC" },
+    });
+  }
   @Mutation(() => Channel)
   async addToChannel(@Arg("data") data: AddToChannelInput) {
     try {
@@ -110,5 +149,10 @@ export class ChannelResolver {
         );
       }
     }
+  }
+
+  @Query(() => Channel)
+  async channel(@Arg("id", () => ID) id: number) {
+    return Channel.findOne({ where: { id } });
   }
 }

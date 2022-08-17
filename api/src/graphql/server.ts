@@ -22,7 +22,7 @@ export async function startApolloServer({
 }) {
   const schema = await buildSchema({
     resolvers: [UserResolver, ChannelResolver],
-    authChecker: authChecker
+    authChecker: authChecker,
   });
   const app = express();
   const httpServer = http.createServer(app);
@@ -52,6 +52,9 @@ export async function startApolloServer({
     })
   );
   app.set("trust proxy", !isProduction());
+  app.get("/", (_, res) => {
+    res.redirect("/graphql");
+  });
   server.applyMiddleware({
     app,
     cors: {

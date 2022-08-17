@@ -5,12 +5,14 @@ import {
   Authorized,
   Ctx,
   Field,
+  FieldResolver,
   ID,
   InputType,
   Int,
   Mutation,
   Query,
   Resolver,
+  Root,
 } from "type-graphql";
 import { comparePassword } from "../business-logic/auth/comparePassword";
 import { hashPassword } from "../business-logic/auth/hashPassword";
@@ -20,6 +22,8 @@ import { MyContext } from "../types/types";
 import { randomInt } from "crypto";
 import { verificationCodeEmail } from "../business-logic/email/verificationCodeEmail";
 import { sendEmail } from "../business-logic/email/sendEmail";
+import { Message } from "../models/Message";
+import { Channel } from "../models/Channel";
 
 @InputType()
 export class RegisterInput implements Partial<User> {
@@ -42,8 +46,65 @@ export class LoginInput implements Partial<User> {
   password: string;
 }
 
-@Resolver()
+@InputType()
+export class PaginationInput {
+  @Field(() => Int, { nullable: true })
+  offset?: number;
+
+  @Field(() => Int, { nullable: true })
+  limit?: number;
+}
+
+@Resolver((of) => User)
 export class UserResolver {
+  @FieldResolver()
+  async messages(
+    @Root() user: User,
+    @Arg("pagination", { nullable: true })
+    pagination: PaginationInput
+  ) {
+    let limit;
+    let offset;
+    if (!pagination?.limit || !pagination?.offset) {
+      limit = 20;
+      offset = 0;
+    } else {
+      limit = pagination.limit;
+      offset = pagination.offset;
+    }
+    return Message.find({
+      where: {
+        user: {
+          id: user.id,
+        },
+      },
+      skip: offset,
+      take: limit,
+    });
+  }
+
+  @FieldResolver()
+  async channels(
+    @Root() user: User,
+    @Arg("pagination", { nullable: true })
+    pagination: PaginationInput
+  ) {
+    let limit;
+    let offset;
+    if (!pagination?.limit || !pagination?.offset) {
+      limit = 20;
+      offset = 0;
+    } else {
+      limit = pagination.limit;
+      offset = pagination.offset;
+    }
+    return Channel.find({
+      where: { members: { id: user.id } },
+      skip: offset,
+      take: limit,
+    });
+  }
+
   @Query(() => User, { nullable: true })
   async user(@Arg("id", (type) => ID) id: number) {
     const user = await User.findOne({ where: { id } });
@@ -131,8 +192,11 @@ export class UserResolver {
     if (!user) {
       throw new ApolloError("User not found", "USER_NOT_FOUND");
     }
-    if(user.verifiedEmail) {
-      throw new ApolloError("Email already verified", "EMAIL_ALREADY_VERIFIED");
+    if (user.verifiedEmail) {
+      throw new ApolloError(
+        "Email already verified",
+        "EMAIL_ALREADY_VERIFIED"
+      );
     }
     if (user.code !== code) {
       throw new ApolloError("Invalid code", "INVALID_CODE");
