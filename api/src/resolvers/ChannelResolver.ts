@@ -1,6 +1,8 @@
 import { ApolloError } from "apollo-server-core";
 import {
   Arg,
+  Authorized,
+  Ctx,
   Field,
   FieldResolver,
   ID,
@@ -16,6 +18,7 @@ import { DatabaseError } from "pg-protocol";
 import { User } from "../models/User";
 import { PaginationInput } from "./UserResolver";
 import { Message } from "../models/Message";
+import { MyContext } from "../types/types";
 
 @InputType()
 class CreateChannelInput {
@@ -25,6 +28,7 @@ class CreateChannelInput {
   @Field((type) => [ID])
   members: number[];
 }
+
 
 @InputType()
 class AddToChannelInput {
@@ -155,4 +159,5 @@ export class ChannelResolver {
   async channel(@Arg("id", () => ID) id: number) {
     return Channel.findOne({ where: { id } });
   }
+
 }

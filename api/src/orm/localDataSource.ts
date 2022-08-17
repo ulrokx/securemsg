@@ -13,5 +13,6 @@ const localDataSource = new DataSource({
   database: "securemsg",
   synchronize: true,
   entities,
+  logging: true,
 });
 export default localDataSource;

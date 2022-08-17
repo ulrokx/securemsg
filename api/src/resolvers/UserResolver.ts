@@ -180,7 +180,7 @@ export class UserResolver {
     return true;
   }
 
-  @Authorized("UNVERIFIEDUSER")
+  @Authorized("UNVERIFIED_USER")
   @Mutation(() => User, { nullable: true })
   async verify(
     @Arg("code", (type) => Int) code: number,
