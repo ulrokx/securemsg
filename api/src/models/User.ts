@@ -54,4 +54,7 @@ export class User extends BaseEntity {
   @OneToMany(() => Message, (message) => message.user)
   @Field((type) => [Message])
   messages: Message[];
+
+  @ManyToMany(() => Channel, channel => channel.typing)
+  channelsTyping: Channel[];
 }

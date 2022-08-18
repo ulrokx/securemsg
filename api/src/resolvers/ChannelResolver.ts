@@ -29,7 +29,6 @@ class CreateChannelInput {
   members: number[];
 }
 
-
 @InputType()
 class AddToChannelInput {
   @Field((type) => ID)
@@ -72,6 +71,16 @@ export class ChannelResolver {
       take: limit,
       skip: offset,
       order: { createdAt: "DESC" },
+    });
+  }
+  @FieldResolver()
+  async typing(@Root() channel: Channel) {
+    return User.find({
+      where: {
+        channelsTyping: {
+          id: channel.id,
+        },
+      },
     });
   }
   @Mutation(() => Channel)
@@ -159,5 +168,4 @@ export class ChannelResolver {
   async channel(@Arg("id", () => ID) id: number) {
     return Channel.findOne({ where: { id } });
   }
-
 }

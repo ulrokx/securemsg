@@ -39,4 +39,9 @@ export class Channel extends BaseEntity {
   @OneToMany(() => Message, (message) => message.channel)
   @Field((type) => [Message])
   messages: Message[];
+
+  @ManyToMany(() => User, (user) => user.channelsTyping)
+  @JoinTable()
+  @Field((type) => [User])
+  typing: User[];
 }
