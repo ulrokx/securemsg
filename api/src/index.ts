@@ -6,8 +6,10 @@ import dotenv from "dotenv";
 
 const main = async () => {
   dotenv.config();
-  const redis = connectRedis();
+  const redisSession = connectRedis();
+  const redisPub = connectRedis();
+  const redisSub = connectRedis();
   await connectDb();
-  await startApolloServer({ redis });
+  await startApolloServer({ redisSession, redisPub, redisSub });
 };
 main();

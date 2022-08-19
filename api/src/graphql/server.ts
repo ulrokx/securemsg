@@ -1,38 +1,71 @@
 import { ApolloServer } from "apollo-server-express";
-import { ApolloServerPluginDrainHttpServer } from "apollo-server-core";
-import express from "express";
-import http from "http";
-import { buildSchema } from "type-graphql";
-import { UserResolver } from "../resolvers/UserResolver";
-import { User } from "../models/User";
-import localDataSource from "../orm/localDataSource";
-import Redis from "ioredis";
-import session from "express-session";
 import ConnectRedis from "connect-redis";
-import { isProduction } from "../util/isProduction";
-import { authChecker } from "./authorization";
+import express from "express";
+import session from "express-session";
+import { RedisPubSub } from "graphql-redis-subscriptions";
+import http, { createServer } from "http";
+import Redis from "ioredis";
+import { buildSchema } from "type-graphql";
 import { ChannelResolver } from "../resolvers/ChannelResolver";
 import { MessageResolver } from "../resolvers/MessageResolver";
+import { UserResolver } from "../resolvers/UserResolver";
+import { isProduction } from "../util/isProduction";
+import { authChecker } from "./authorization";
+import {
+  ApolloServerPluginDrainHttpServer,
+  ApolloServerPluginLandingPageLocalDefault,
+} from "apollo-server-core";
+import { WebSocketServer } from "ws";
+import { useServer } from "graphql-ws/lib/use/ws";
 
 const PORT = process.env.PORT || 4000;
 
 export async function startApolloServer({
-  redis,
+  redisSession,
+  redisPub,
+  redisSub,
 }: {
-  redis: Redis;
+  redisSession: Redis;
+  redisPub: Redis;
+  redisSub: Redis;
 }) {
+  const pubSub = new RedisPubSub({
+    publisher: redisPub,
+    subscriber: redisSub,
+  });
   const schema = await buildSchema({
     resolvers: [UserResolver, ChannelResolver, MessageResolver],
     authChecker: authChecker,
+    pubSub,
   });
   const app = express();
   const httpServer = http.createServer(app);
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: "/graphql",
+  });
+  const serverCleanup = useServer({ schema }, wsServer);
   const server = new ApolloServer({
-    context: ({ req, res }) => ({ req, res, redis }),
+    context: ({ req, res }) => ({
+      req,
+      res,
+      redis: redisSession,
+    }),
     schema,
     csrfPrevention: true,
     cache: "bounded",
-    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+    plugins: [
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              await serverCleanup.dispose();
+            },
+          };
+        },
+      },
+    ],
   });
   await server.start();
   const RedisStore = ConnectRedis(session);
@@ -41,7 +74,7 @@ export async function startApolloServer({
       secret: "secret",
       resave: false,
       store: new RedisStore({
-        client: redis,
+        client: redisSession,
       }),
       saveUninitialized: false,
       cookie: {

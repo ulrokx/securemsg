@@ -1,11 +1,12 @@
 import { AuthChecker } from "type-graphql";
+import { Channel } from "../models/Channel";
 import { User } from "../models/User";
 import { MyContext } from "../types/types";
 
 const ROLES = ["VERIFIED_USER", "UNVERIFIED_USER"];
 
 export const authChecker: AuthChecker<MyContext> = async (
-  { context },
+  { context, args },
   roles
 ) => {
   roles.forEach((role) => {
@@ -17,7 +18,7 @@ export const authChecker: AuthChecker<MyContext> = async (
     return false;
   }
   const userId = context.req.session.userId;
-  const user = await User.findOne({ where: { id: userId }});
+  const user = await User.findOne({ where: { id: userId } });
   if (!user) {
     throw new Error(`User with id ${userId} not found`);
   }

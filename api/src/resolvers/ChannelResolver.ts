@@ -166,6 +166,9 @@ export class ChannelResolver {
 
   @Query(() => Channel)
   async channel(@Arg("id", () => ID) id: number) {
-    return Channel.findOne({ where: { id } });
+    return Channel.findOne({
+      where: { id },
+      relations: ["typing", "members"],
+    });
   }
 }

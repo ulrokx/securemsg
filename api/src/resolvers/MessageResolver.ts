@@ -1,6 +1,7 @@
 import { ApolloError } from "apollo-server-core";
 import {
   Arg,
+  Args,
   Authorized,
   Ctx,
   Field,
@@ -8,9 +9,13 @@ import {
   ID,
   InputType,
   Mutation,
+  Publisher,
+  PubSub,
   Resolver,
   Root,
+  Subscription,
 } from "type-graphql";
+import { userInChannel } from "../business-logic/channel/userInChannel";
 import { Channel } from "../models/Channel";
 import { Message } from "../models/Message";
 import { User } from "../models/User";
@@ -65,7 +70,6 @@ export class MessageResolver {
     channel.typing.push(user);
     await channel.save();
     setTimeout(() => {
-      console.log("heree");
       channel.typing = channel.typing.filter(
         (user) => user.id !== userId
       );
@@ -78,11 +82,13 @@ export class MessageResolver {
   @Mutation(() => Message)
   async sendMessage(
     @Arg("data") data: SendMessageInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req }: MyContext,
+    @PubSub("NEW_MESSAGE") publish: Publisher<Message>
   ) {
     try {
       const channel = await Channel.findOne({
         where: { id: data.channelId },
+        relations: ["typing"],
       });
       if (!channel) {
         throw new ApolloError(
@@ -108,6 +114,7 @@ export class MessageResolver {
         user: { id: userId },
         text: data.text,
       }).save();
+      await publish(message);
       return message;
     } catch (e) {
       console.error(e);
@@ -116,5 +123,19 @@ export class MessageResolver {
         "MESSAGE_NOT_SENT"
       );
     }
+  }
+  @Subscription({
+    topics: "NEW_MESSAGE",
+    filter: ({ args, payload }) =>
+      args.id === payload.channel.id,
+  })
+  newMessage(
+    @Root() message: Message,
+    @Arg("id", () => ID) id: number
+  ): Message {
+    return {
+      ...message,
+      createdAt: new Date(message.createdAt),
+    } as Message;
   }
 }
