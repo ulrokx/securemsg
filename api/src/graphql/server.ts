@@ -17,6 +17,7 @@ import {
 } from "apollo-server-core";
 import { WebSocketServer } from "ws";
 import { useServer } from "graphql-ws/lib/use/ws";
+import cors from "cors";
 
 const PORT = process.env.PORT || 4000;
 
@@ -70,6 +71,15 @@ export async function startApolloServer({
   await server.start();
   const RedisStore = ConnectRedis(session);
   app.use(
+    cors({
+      origin: [
+        "https://studio.apollographql.com",
+        "http://localhost:5173",
+      ],
+      credentials: true,
+    })
+  );
+  app.use(
     session({
       secret: "secret",
       resave: false,
@@ -80,24 +90,15 @@ export async function startApolloServer({
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365,
         httpOnly: true,
-        sameSite: "none",
-        secure: true,
+        sameSite: "lax",
+        secure: isProduction(),
       },
     })
   );
-  app.set("trust proxy", !isProduction());
-  app.get("/", (_, res) => {
-    res.redirect("/graphql");
-  });
+  app.set("trust proxy", 1);
   server.applyMiddleware({
     app,
-    cors: {
-      credentials: true,
-      origin: [
-        "https://studio.apollographql.com",
-        "http://localhost:4000/graphql",
-      ],
-    },
+    cors: false,
   });
   await new Promise<void>((resolve) =>
     httpServer.listen({ port: PORT }, resolve)

@@ -12,7 +12,7 @@ export const validateRegistration = async (
     throw new ApolloError("Invalid email", "INVALID_EMAIL");
   }
   const passwordStrength = zxcvbn(password);
-  if (passwordStrength.score < 3) {
+  if (passwordStrength.score < 2) {
     throw new ApolloError(
       "Weak password",
       "INVALID_PASSWORD",

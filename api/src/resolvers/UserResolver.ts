@@ -147,7 +147,10 @@ export class UserResolver {
       where: { username: data.username },
     });
     if (!user) {
-      throw new ApolloError("User not found", "USER_NOT_FOUND");
+      throw new ApolloError(
+        "Unable to authenticate.",
+        "BAD_AUTH"
+      );
     }
     const valid = await comparePassword({
       hash: user.password,
@@ -155,8 +158,8 @@ export class UserResolver {
     });
     if (!valid) {
       throw new ApolloError(
-        "Invalid password",
-        "INVALID_PASSWORD"
+        "Unable to authenticate.",
+        "BAD_AUTH"
       );
     }
     req.session.userId = user.id;

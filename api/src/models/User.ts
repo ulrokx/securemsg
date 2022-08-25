@@ -48,11 +48,11 @@ export class User extends BaseEntity {
 
   @ManyToMany(() => Channel, (channel) => channel.members)
   @JoinTable()
-  @Field((type) => [Channel])
+  @Field((type) => [Channel], { nullable: true })
   channels: Channel[];
 
   @OneToMany(() => Message, (message) => message.user)
-  @Field((type) => [Message])
+  @Field((type) => [Message], { nullable: true })
   messages: Message[];
 
   @ManyToMany(() => Channel, channel => channel.typing)
