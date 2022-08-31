@@ -20,7 +20,7 @@ export class Channel extends BaseEntity {
   @Field((type) => ID)
   id: number;
 
-  @Column("text")
+  @Column("text", { nullable: true })
   @Field()
   name: string;
 

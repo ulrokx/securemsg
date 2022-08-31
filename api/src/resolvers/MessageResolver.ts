@@ -34,6 +34,7 @@ class SendMessageInput {
 export class MessageResolver {
   @FieldResolver()
   async user(@Root() message: Message) {
+    console.log(message)
     return User.findOne({ where: { id: message.user.id } });
   }
 
@@ -41,6 +42,7 @@ export class MessageResolver {
   async channel(@Root() message: Message) {
     return Channel.findOne({
       where: { id: message.channel.id },
+      relations: ["members", "messages"],
     });
   }
 
@@ -78,7 +80,6 @@ export class MessageResolver {
     return channel;
   }
 
-  @Authorized("VERIFIED_USER")
   @Mutation(() => Message)
   async sendMessage(
     @Arg("data") data: SendMessageInput,

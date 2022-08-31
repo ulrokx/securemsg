@@ -2,6 +2,7 @@ import {
   AppBar,
   Box,
   Button,
+  CircularProgress,
   Toolbar,
   Typography,
 } from "@mui/material";
@@ -9,7 +10,7 @@ import { Link, Outlet } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export const Header = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const handleLogout = () => {
     logout();
   };
@@ -18,8 +19,14 @@ export const Header = () => {
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="static">
           <Toolbar>
+            <Typography variant="h6">SecureMSG</Typography>
             <Box ml="auto" display="flex" alignItems="center">
-              {user ? (
+              {loading ? (
+                <CircularProgress
+                  color="inherit"
+                  sx={{ mr: 4 }}
+                />
+              ) : user ? (
                 <>
                   <Typography variant="h6" mr="2rem">
                     Hello, {user.username}

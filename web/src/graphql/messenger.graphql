@@ -1,0 +1,14 @@
+query Messenger(
+  $pagination: PaginationInput
+  $messagesPagination: PaginationInput
+) {
+  channels(pagination: $pagination) {
+    id
+    name
+    createdAt
+    updatedAt
+    messages(pagination: $messagesPagination) {
+      text
+    }
+  }
+}

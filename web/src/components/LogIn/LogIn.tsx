@@ -20,13 +20,7 @@ export const LogIn = () => {
       await login({
         variables: { data: { username, password } },
       });
-      console.log("login success");
-      console.log(location);
-      if (location.state) {
-        navigate((location.state as any).from.pathname);
-      } else {
-        navigate("/");
-      }
+      setTimeout(() => navigate("/"), 500);
     } catch (e) {
       setError(
         "Sorry, but the username or password you entered is incorrect."

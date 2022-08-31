@@ -41,6 +41,22 @@ class AddToChannelInput {
 @Resolver((of) => Channel)
 export class ChannelResolver {
   @FieldResolver()
+  async name(
+    @Root() channel: Channel,
+    @Ctx() { req }: MyContext
+  ) {
+    if (channel.members && channel.members.length == 2) {
+      const otherMember = channel.members.filter(
+        (member) => member.id !== req.session.userId
+      )[0];
+      const otherUser = await User.findOne({
+        where: { id: otherMember.id },
+      });
+      return otherUser!.username;
+    }
+    return channel.name;
+  }
+  @FieldResolver()
   async members(@Root() channel: Channel) {
     return User.find({
       where: {
@@ -168,6 +184,32 @@ export class ChannelResolver {
   async channel(@Arg("id", () => ID) id: number) {
     return Channel.findOne({
       where: { id },
+      relations: [
+        "typing",
+        "members",
+        "messages",
+      ],
+    });
+  }
+
+  @Authorized(["UNVERIFIED_USER"])
+  @Query(() => [Channel])
+  async channels(
+    @Arg("pagination", { nullable: true })
+    pagination: PaginationInput
+  ) {
+    let limit;
+    let offset;
+    if (!pagination?.limit || !pagination?.offset) {
+      limit = 20;
+      offset = 0;
+    } else {
+      limit = pagination.limit;
+      offset = pagination.offset;
+    }
+    return Channel.find({
+      take: limit,
+      skip: offset,
       relations: ["typing", "members"],
     });
   }

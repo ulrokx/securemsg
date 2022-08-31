@@ -25,7 +25,7 @@ export class Message extends BaseEntity {
   @Field()
   createdAt: Date;
 
-  @ManyToOne(() => User, (user) => user.messages)
+  @ManyToOne(() => User, (user) => user.messages, {eager: true})
   @Field((type) => User)
   user: User;
 

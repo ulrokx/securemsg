@@ -1,0 +1,21 @@
+query Channel($id: ID!, $pagination: PaginationInput) {
+  channel(id: $id) {
+    id
+    name
+    createdAt
+    updatedAt
+    members {
+      id
+      username
+    }
+    messages(pagination: $pagination) {
+      id
+      text
+      createdAt
+      user {
+        id
+        username
+      }
+    }
+  }
+}
