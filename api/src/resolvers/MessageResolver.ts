@@ -34,7 +34,6 @@ class SendMessageInput {
 export class MessageResolver {
   @FieldResolver()
   async user(@Root() message: Message) {
-    console.log(message)
     return User.findOne({ where: { id: message.user.id } });
   }
 

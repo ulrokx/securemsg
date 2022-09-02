@@ -19,10 +19,11 @@ import { User } from "../models/User";
 import { PaginationInput } from "./UserResolver";
 import { Message } from "../models/Message";
 import { MyContext } from "../types/types";
+import { In } from "typeorm";
 
 @InputType()
 class CreateChannelInput {
-  @Field()
+  @Field({ nullable: true })
   name: string;
 
   @Field((type) => [ID])
@@ -45,6 +46,7 @@ export class ChannelResolver {
     @Root() channel: Channel,
     @Ctx() { req }: MyContext
   ) {
+    console.log(channel);
     if (channel.members && channel.members.length == 2) {
       const otherMember = channel.members.filter(
         (member) => member.id !== req.session.userId
@@ -144,6 +146,12 @@ export class ChannelResolver {
 
   @Mutation(() => Channel)
   async createChannel(@Arg("data") data: CreateChannelInput) {
+    if (data.members.length < 2) {
+      throw new ApolloError(
+        "You need at least two members to create a channel",
+        "NOT_ENOUGH_MEMBERS"
+      );
+    }
     try {
       const { createdChannel } = await dataSource.transaction(
         async (trx) => {
@@ -184,11 +192,7 @@ export class ChannelResolver {
   async channel(@Arg("id", () => ID) id: number) {
     return Channel.findOne({
       where: { id },
-      relations: [
-        "typing",
-        "members",
-        "messages",
-      ],
+      relations: ["typing", "members", "messages"],
     });
   }
 
@@ -196,7 +200,8 @@ export class ChannelResolver {
   @Query(() => [Channel])
   async channels(
     @Arg("pagination", { nullable: true })
-    pagination: PaginationInput
+    pagination: PaginationInput,
+    @Ctx() { req }: MyContext
   ) {
     let limit;
     let offset;
@@ -207,10 +212,17 @@ export class ChannelResolver {
       limit = pagination.limit;
       offset = pagination.offset;
     }
+    const channels = await dataSource
+      .getRepository(Channel)
+      .createQueryBuilder("channel")
+      .leftJoinAndSelect("channel.members", "user")
+      .where("user.id = :id", { id: req.session.userId })
+      .take(limit)
+      .offset(offset)
+      .getMany();
     return Channel.find({
-      take: limit,
-      skip: offset,
-      relations: ["typing", "members"],
+      where: { id: In(channels.map((channel) => channel.id)) },
+      relations: ["typing", "members", "messages"],
     });
   }
 }

@@ -105,6 +105,22 @@ export class UserResolver {
     });
   }
 
+  @Query(() => [User])
+  async searchUsers(
+    @Arg("username") username: string,
+    @Ctx() { req }: MyContext
+  ) {
+    return User.createQueryBuilder()
+      .select()
+      .where("username ILIKE :username", {
+        username: `%${username}%`,
+      })
+      .getMany()
+      .then((users) =>
+        users.filter((user) => user.id !== req.session.userId)
+      );
+  }
+
   @Query(() => User, { nullable: true })
   async user(@Arg("id", (type) => ID) id: number) {
     const user = await User.findOne({ where: { id } });
@@ -168,7 +184,6 @@ export class UserResolver {
 
   @Mutation(() => Boolean, { nullable: true })
   async logout(@Ctx() { req }: MyContext) {
-    console.log(req.session);
     if (!req.session.userId) {
       return false;
     }

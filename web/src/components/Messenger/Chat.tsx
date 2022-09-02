@@ -18,6 +18,7 @@ import {
   useChannelQuery,
   useSendMessageMutation,
 } from "../../graphql/generated";
+import { MessageBar } from "./MessageBar";
 import MessageBubble from "./MessageBubble";
 
 interface ChatProps {
@@ -30,10 +31,6 @@ export const Chat = ({ channelId }: ChatProps) => {
       id: channelId,
     },
   });
-  const [message, setMessage] = useState("");
-  useEffect(() => {
-    setMessage("");
-  }, [channelId]);
   const [sendMessage] = useSendMessageMutation({
     update(cache, { data }) {
       const response = data?.sendMessage!;
@@ -61,10 +58,7 @@ export const Chat = ({ channelId }: ChatProps) => {
   const { user } = useAuth();
   const topMessageRef = useRef<HTMLDivElement>(null);
   const channel = data?.channel;
-  const handleSendMessage: ReactEventHandler<HTMLFormElement> = (
-    e
-  ) => {
-    e.preventDefault();
+  const handleSendMessage = (message: string) => {
     sendMessage({
       variables: {
         input: {
@@ -74,7 +68,6 @@ export const Chat = ({ channelId }: ChatProps) => {
       },
     });
     topMessageRef.current?.scrollIntoView();
-    setMessage("");
   };
   if (error) {
     return <pre>{JSON.stringify(error, null, 2)}</pre>;
@@ -110,25 +103,7 @@ export const Chat = ({ channelId }: ChatProps) => {
           />
         ))}
       </Box>
-      <Box
-        sx={{ display: "flex" }}
-        component="form"
-        onSubmit={handleSendMessage}>
-        <TextField
-          variant="outlined"
-          label="Message"
-          fullWidth
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <Button
-          variant="contained"
-          color="secondary"
-          type="submit"
-          sx={{ width: "200px" }}>
-          Send
-        </Button>
-      </Box>
+      <MessageBar sendMessage={handleSendMessage} />
     </Box>
   );
 };
